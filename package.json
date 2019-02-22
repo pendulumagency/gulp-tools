@@ -1,6 +1,6 @@
 {
   "name": "@pendulum/gulp-tools",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -16,11 +16,10 @@
     "url": "https://github.com/pendulumagency/gulp-tools/issues"
   },
   "homepage": "https://github.com/pendulumagency/gulp-tools#readme",
-  "devDependencies": {
-    
-  },
+  "devDependencies": {},
   "dependencies": {
-    "gulp": "^4.0.0",
-    "del": "^3.0.0"
+    "del": ">=3.0.0",
+    "gulp": ">=4.0.0",
+    "gulp-sass": ">=4.0.2"
   }
 }

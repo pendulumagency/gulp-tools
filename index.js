@@ -1,5 +1,6 @@
 const gulp = require("gulp");
 const del = require("del");
+const sass = require("gulp-sass");
 
 /**
  * Generates exports for a gulpfile based on our common business patterns
@@ -44,6 +45,15 @@ const createGulpfile = (options) => {
         watchTasks = [...watchTasks, ...result.watchTasks];
     }
 
+    if (include.scss) {
+        const {src, dest, options} = include.scss;
+        const {scss, scssWatch} = createSass(src, dest);
+
+        tasks.scss = scss;
+        parallelBuildTasks.push(scss);
+        watchTasks.push(scssWatch);
+    }
+
     /**
      * Setup main build and watch tasks
      */
@@ -70,20 +80,19 @@ const createGulpfile = (options) => {
  * @param {*} copyDefs 
  */
 const createCopyAll = (copyDefs) => {
-    const tasks = {};
+    let tasks = {};
     const parallelBuildTasks = [];
     const watchTasks = [];
 
     for (const key of Object.keys(copyDefs)) {
         const [src, dest] = copyDefs[key];
-        const {copy, copyWatch} = createCopy(src, dest)
+        const result = createCopy(key, src, dest)
 
-        tasks[key] = copy;
-        tasks[key + "Watch"] = copyWatch;
+        console.log(result[key + "Watch"]);
 
-        parallelBuildTasks.push(copy);
-
-        watchTasks.push(copyWatch);
+        tasks = {...tasks, ...result};
+        parallelBuildTasks.push(result[key]);
+        watchTasks.push(result[key + "Watch"]);
     }
 
     return {
@@ -98,23 +107,50 @@ const createCopyAll = (copyDefs) => {
  * @param {*} src 
  * @param {*} dest 
  */
-const createCopy = (src, dest) => {
+const createCopy = (name, src, dest) => {
+    const result = {
+        [name]: () => gulp.src(src).pipe(gulp.dest(dest)),
+        [name + "Watch"]: () => gulp.watch(src, copy)
+    }
+    return result;
     const copy = () => gulp.src(src).pipe(gulp.dest(dest));
     const copyWatch = () => gulp.watch(src, copy);
 
     return {copy, copyWatch};
 }
 
+/**
+ * Creates a sass pipe for Gulp
+ * @param {*} src 
+ * @param {*} dest 
+ */
+const createSass = (src, dest) => {
+    const scss = () => gulp.src(src)
+        .pipe(sass()) // TODO: allow options like csso, minification, sourcemaps, and logging
+        .pipe(gulp.dest(dest))
+    
+    const scssWatch = () => gulp.watch(src, scss);
+    
+    return {scss, scssWatch}
+}
+
+
+
 module.exports = {
     createGulpfile
 }
 
 
+// Tests
 console.log(createGulpfile({
     include: {
         clean: true,
         copy: {
             static: ["./src/static/**/*", "./dist"]
+        },
+        scss: {
+            src: "./src/scss",
+            dest: "./dist"
         }
     }
 }));
