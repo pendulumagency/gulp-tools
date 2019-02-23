@@ -1,6 +1,6 @@
 {
   "name": "@pendulum/gulp-tools",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,8 @@
     "url": "https://github.com/pendulumagency/gulp-tools/issues"
   },
   "homepage": "https://github.com/pendulumagency/gulp-tools#readme",
-  "devDependencies": {},
+  "devDependencies": {
+  },
   "dependencies": {
     "del": ">=3.0.0",
     "gulp-better-rollup": "^3.4.0",
@@ -24,7 +25,9 @@
     "gulp-typescript": "^5.0.0",
     "rollup-plugin-babel": "^4.3.2",
     "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^4.0.1"
+    "rollup-plugin-node-resolve": "^4.0.1",
+    "browser-sync": "^2.26.3",
+    "gulp-cached": "^1.1.1"
   },
   "peerDependencies": {
     "@babel/preset-env": "^7.3.1",

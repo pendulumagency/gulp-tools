@@ -8,6 +8,9 @@ const babel = require("rollup-plugin-babel");
 const nodeResolve = require("rollup-plugin-node-resolve");
 const commonJs = require("rollup-plugin-commonjs");
 
+const cache = require("gulp-cached");
+const browserSync = require("browser-sync");
+
 
 const defaultRollupOptions = [{
     "plugins": [
@@ -34,6 +37,8 @@ const defaultRollupOptions = [{
 }]
 
 
+
+
 /**
  * Generates exports for a gulpfile based on our common business patterns
  * @param {*} options 
@@ -50,6 +55,9 @@ const createGulpfile = (options) => {
     let parallelBuildTasks = []; // One-time build of project
 
     let watchTasks = []; // Watch tasks in parallel
+
+    let deployTask = null;
+    let serveTask = null;
 
 
     /**
@@ -152,6 +160,57 @@ const createGulpfile = (options) => {
     }
 
 
+    /**
+     * Setup deploy tasks (or deploy and repload if also using serve with browserSync)
+     */
+    if (include.deploy) {
+        const {src, dest} = include.deploy;
+
+        const deploy = () => gulp.src(src)
+            .pipe(gulp.dest(dest));
+
+        
+        if (include.serve) {
+            const deployAndReload = () => gulp.src(src)
+                .pipe(cache('deploy'))
+                .pipe(gulp.dest(dest))
+                .pipe(browserSync.stream())
+
+            const deployWatch = () => gulp.watch(src, deployAndReload);
+
+            watchTasks.push(deployWatch);            
+        } else {
+            const deployWatch = () => gulp.watch(src, deploy);
+
+            watchTasks.push(deployWatch);
+        }
+
+        tasks.deploy = deploy;
+        deployTask = deploy;
+    }
+
+
+    if (include.serve) {
+        const {proxy, sslKey, sslCert} = include.serve;
+
+        let https = sslKey || sslCert ? 
+        {
+            key: sslKey,
+            cert: sslCert
+        } : undefined;
+
+        /**
+         * Serve with BrowserSync
+         */
+        serveTask = done => {
+            browserSync.init({
+                proxy,
+                https
+            })
+            done();
+        }
+    }
+
 
 
     /**
@@ -163,7 +222,14 @@ const createGulpfile = (options) => {
 
     const watch = watchTasks.length > 0 ? gulp.parallel(...watchTasks) : done => done(); // TODO: Don't even add watch if no watch tasks defined
     const build = gulp.series(...buildTasks);
-    const buildAndWatch = gulp.series(build, /* deploy, serve, */ watch); // Not finished
+    
+
+    const buildAndWatchTasks = [build];
+    if (deployTask) buildAndWatchTasks.push(deployTask);
+    if (serveTask) buildAndWatchTasks.push(serveTask);
+    buildAndWatchTasks.push(watch);
+
+    const buildAndWatch = gulp.series(...buildAndWatchTasks);//build, /* deploy, serve, */ watch); // Not finished
 
     return {
         ...tasks,
@@ -207,7 +273,7 @@ const createCopyAll = (copyDefs) => {
 const createCopy = (name, src, dest) => {
     const result = {
         [name]: () => gulp.src(src).pipe(gulp.dest(dest)),
-        [name + "Watch"]: () => gulp.watch(src, copy)
+        [name + "Watch"]: () => gulp.watch(src, result[name])
     }
     return result;
     const copy = () => gulp.src(src).pipe(gulp.dest(dest));
