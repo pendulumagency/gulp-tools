@@ -99,7 +99,7 @@ const createGulpfile = (options) => {
         let declarationsTask;
         let cleanTask;
 
-        const declarationOptions = include.declarations;
+        const declarationOptions = include.ts.declarations;
 
         if (declarationOptions) {
             const {src, dest} = declarationOptions;
