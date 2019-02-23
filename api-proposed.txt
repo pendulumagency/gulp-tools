@@ -1,0 +1,34 @@
+
+/// Proposed API to preserve composability
+// const {create, series, parallel, createGulpfile} = require("@pendulum/gulp-tools");
+
+const build = create([
+    clean(src, dest),
+    parallel(
+        ...copy({
+            static: ["./src/static/**/*", dist],
+            php: ["./src/php/**/*", dist],
+            vendor: [["./vendor/**/*.php", "./vendor/.htaccess"], dist + "/vendor"]
+        }),
+        sass(src, dest),
+        [ // Array is series by default
+            ts(src, dest),
+            parallel(
+                rollup(src, dest),
+                declarations(src, dest) // Or copy() ?
+            ),
+            clean({tsClean: [src, dest]})
+            // Also shortcut?
+            // tsAndRollup({
+            //    src, dest, declarations: boolean, temp /* temp directory */   
+            // })
+        ]
+    )
+]) // Generates watchers and registers them
+
+const deploy; // = deploy(src, dest) or copy({deploy: [src, dest]})
+const serve;
+const watch = startWatchers();
+
+const serveAndWatch = create(build, deploy, serve, watch);
+

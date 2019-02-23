@@ -1,0 +1,45 @@
+const tools = require("@pendulum/gulp-tools");
+
+// Change these according to the development environment
+const devHost = "https://wvalleyfiber.dev";
+const devServerPath = "../wvalleyfiber";
+// WARNING: Everything in dev. deploy path may be overwritten ***************
+const devDeployPath = devServerPath + "/wp-content/themes/wvalleyfiber-theme/";
+const sslCertPath = "../localhost.crt";
+const sslKeyPath = "../localhost.key";
+
+const temp = "./temp";
+const dist = "./dist";
+
+module.exports = tools.createGulpfile({
+    include: {
+        clean: [dist, temp],
+        copy: {
+            static: ["./src/static/**/*", dist],
+            php: ["./src/php/**/*", dist],
+            vendor: [["./vendor/**/*.php", "./vendor/.htaccess"], dist + "/vendor"]
+        },
+        scss: {
+            src: "./src/scss/style.scss",
+            dest: dist
+        },
+        ts: {
+            src: "./src/ts/**/*",
+            dest: temp + "/js",
+            rollup: {
+                src: temp + "/js/main.js",
+                dest: dist
+            },
+            clean: temp
+        },
+        deploy: {
+            src: dist,
+            dest: devDeployPath
+        },
+        serve: {
+            proxy: devHost,
+            sslCert: sslCertPath,
+            sslKey: sslKeyPath
+        }
+    }
+});
