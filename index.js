@@ -88,8 +88,8 @@ const createGulpfile = (options) => {
      * Setup Sass tasks
      */
     if (include.scss) {
-        const {src, dest, options} = include.scss;
-        const {scss, scssWatch} = createSass(src, dest);
+        const {src, dest, watchSrc, options} = include.scss;
+        const {scss, scssWatch} = createSass(src, dest, watchSrc);
 
         tasks.scss = scss;
         parallelBuildTasks.push(scss);
@@ -287,12 +287,12 @@ const createCopy = (name, src, dest) => {
  * @param {*} src 
  * @param {*} dest 
  */
-const createSass = (src, dest) => {
+const createSass = (src, dest, watchSrc) => {
     const scss = () => gulp.src(src)
         .pipe(sass()) // TODO: allow options like csso, minification, sourcemaps, and logging
         .pipe(gulp.dest(dest))
     
-    const scssWatch = () => gulp.watch(src, scss);
+    const scssWatch = () => gulp.watch(watchSrc || src, scss);
     
     return {scss, scssWatch}
 }
