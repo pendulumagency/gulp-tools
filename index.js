@@ -96,7 +96,23 @@ const createGulpfile = (options) => {
         const {ts, tsWatch} = createTypeScript(src, dest, tsconfig);
 
         let rollupTask;
+        let declarationsTask;
         let cleanTask;
+
+        const declarationOptions = include.declarations;
+
+        if (declarationOptions) {
+            const {src, dest} = declarationOptions;
+
+            const declarations  = () => gulp.src(src)
+                .pipe(gulp.dest(dest));
+
+            const declarationsWatch = () => gulp.watch(src, declarations);
+
+            tasks.declarations = declarations;
+            declarationsTask = declarations;
+            watchTasks.push(declarationsWatch);
+        }
 
         let rollupOptions = include.ts.rollup; // To deal with variable/constant scope and same-named variables
 
@@ -104,7 +120,7 @@ const createGulpfile = (options) => {
             const {src, dest, options} = rollupOptions;
 
             const rollup = () => gulp.src(src)
-                .pipe(rollupPipe(options || defaultRollupOptions))
+                .pipe(rollupPipe(...(options || defaultRollupOptions)))
                 .pipe(gulp.dest(dest));
 
             const rollupWatch = () => gulp.watch(src, rollup);
@@ -121,7 +137,13 @@ const createGulpfile = (options) => {
         }
 
         tsAndRollup = [ts];
-        if (rollupTask) tsAndRollup.push(rollupTask);
+        if (rollupTask || declarationsTask) { // rollup and decl copy can be parallel
+            const t = [];
+            if (rollupTask) t.push(rollupTask);
+            if (declarationsTask) t.push(declarationsTask);
+
+            tsAndRollup.push(t.length > 1 ? gulp.parallel(...t) : t[0]);
+        }
         if (cleanTask) tsAndRollup.push(cleanTask);
 
         tasks.ts = ts;
