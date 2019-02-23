@@ -165,8 +165,6 @@ const createCopyAll = (copyDefs) => {
         const [src, dest] = copyDefs[key];
         const result = createCopy(key, src, dest)
 
-        console.log(result[key + "Watch"]);
-
         tasks = {...tasks, ...result};
         parallelBuildTasks.push(result[key]);
         watchTasks.push(result[key + "Watch"]);
@@ -232,18 +230,3 @@ const createTypeScript = (src, dest, config = "tsconfig.json") => {
 module.exports = {
     createGulpfile
 }
-
-
-// Tests
-console.log(createGulpfile({
-    include: {
-        clean: true,
-        copy: {
-            static: ["./src/static/**/*", "./dist"]
-        },
-        scss: {
-            src: "./src/scss",
-            dest: "./dist"
-        }
-    }
-}));
