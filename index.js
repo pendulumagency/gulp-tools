@@ -125,17 +125,43 @@ const createGulpfile = (options) => {
         let rollupOptions = include.ts.rollup; // To deal with variable/constant scope and same-named variables
 
         if (rollupOptions) {
-            const {src, dest, options} = rollupOptions;
+            let single = rollupOptions.src && rollupOptions.dest;
 
-            const rollup = () => gulp.src(src)
-                .pipe(rollupPipe(...(options || defaultRollupOptions)))
-                .pipe(gulp.dest(dest));
+            if (single) {
+                const {src, dest, options} = rollupOptions;
+                
+                const rollup = () => gulp.src(src)
+                    .pipe(rollupPipe(...(options || defaultRollupOptions)))
+                    .pipe(gulp.dest(dest));
 
-            const rollupWatch = () => gulp.watch(src, rollup);
+                const rollupWatch = () => gulp.watch(src, rollup);
 
-            tasks.rollup = rollup;
-            rollupTask = rollup;
-            watchTasks.push(rollupWatch);
+                tasks.rollup = rollup;
+                rollupTask = rollup;
+                watchTasks.push(rollupWatch);
+            } else {
+                let rollupTasks = [];
+
+                for (const key of Object.keys(rollupOptions)) {
+                    const {src, dest, options} = rollupOptions[key];
+
+                    const k = key + "Rollup";
+    
+                    const t = {
+                        [k]: () => gulp.src(src)
+                            .pipe(rollupPipe(...(options || defaultRollupOptions)))
+                            .pipe(gulp.dest(dest)),
+                        [k + "Watch"]: () => gulp.watch(src, t[key + "Rollup"])
+                    }
+    
+                    tasks[k] = t[k];
+                    rollupTasks.push(t[k]);
+                    watchTasks.push(t[k + "Watch"]);
+                }
+
+                rollupTask = gulp.parallel(...rollupTasks);
+            }
+
         }
 
         if (clean) {
