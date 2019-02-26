@@ -1,40 +1,40 @@
 const gulp = require("gulp");
 const del = require("del");
 const sass = require("gulp-sass");
-const typescript = require("gulp-typescript");
 
-const rollupPipe = require("gulp-better-rollup");
-const babel = require("rollup-plugin-babel");
-const nodeResolve = require("rollup-plugin-node-resolve");
-const commonJs = require("rollup-plugin-commonjs");
+let defaultRollupOptions = null;
+const getDefaultRollupOptions = () => {
+    if (!defaultRollupOptions) {
+        const babel = require("rollup-plugin-babel");
+        const nodeResolve = require("rollup-plugin-node-resolve");
+        const commonJs = require("rollup-plugin-commonjs");
 
-const cache = require("gulp-cached");
-const browserSync = require("browser-sync");
-
-
-const defaultRollupOptions = [{
-    "plugins": [
-        babel({
-            babelrc: false,
-            comments: false,
-            presets: [['@babel/preset-env', {
-                targets: {
-                    "ie": "11"
-                },
-                loose: true,
-                modules: false
-            }]],
-            runtimeHelpers: true,
-            plugins: [
-                ["@babel/transform-runtime"]
+        defaultRollupOptions = [{
+            "plugins": [
+                babel({
+                    babelrc: false,
+                    comments: false,
+                    presets: [['@babel/preset-env', {
+                        targets: {
+                            "ie": "11"
+                        },
+                        loose: true,
+                        modules: false
+                    }]],
+                    runtimeHelpers: true,
+                    plugins: [
+                        ["@babel/transform-runtime"]
+                    ]
+                }),
+                commonJs(),
+                nodeResolve()
             ]
-        }),
-        commonJs(),
-        nodeResolve()
-    ]
-}, {
-    "format": "iife"
-}]
+        }, {
+            "format": "iife"
+        }]
+    }
+    return defaultRollupOptions;
+}
 
 
 
@@ -100,6 +100,8 @@ const createGulpfile = (options) => {
      * Setup TypeScript tasks
      */
     if (include.ts) {
+        const typescript = require("gulp-typescript");
+
         const {src, dest, tsconfig, clean} = include.ts;
         const {ts, tsWatch} = createTypeScript(src, dest, tsconfig);
 
@@ -125,13 +127,15 @@ const createGulpfile = (options) => {
         let rollupOptions = include.ts.rollup; // To deal with variable/constant scope and same-named variables
 
         if (rollupOptions) {
+            const rollupPipe = require("gulp-better-rollup");
+
             let single = rollupOptions.src && rollupOptions.dest;
 
             if (single) {
                 const {src, dest, options} = rollupOptions;
                 
                 const rollup = () => gulp.src(src)
-                    .pipe(rollupPipe(...(options || defaultRollupOptions)))
+                    .pipe(rollupPipe(...(options || getDefaultRollupOptions())))
                     .pipe(gulp.dest(dest));
 
                 const rollupWatch = () => gulp.watch(src, rollup);
@@ -149,7 +153,7 @@ const createGulpfile = (options) => {
     
                     const t = {
                         [k]: () => gulp.src(src)
-                            .pipe(rollupPipe(...(options || defaultRollupOptions)))
+                            .pipe(rollupPipe(...(options || getDefaultRollupOptions())))
                             .pipe(gulp.dest(dest)),
                         [k + "Watch"]: () => gulp.watch(src, t[key + "Rollup"])
                     }
@@ -186,10 +190,19 @@ const createGulpfile = (options) => {
     }
 
 
+
+    let browserSync = null;
+    if (include.deploy || include.serve) {
+        browserSync = require("browser-sync");
+    }
+
+
     /**
      * Setup deploy tasks (or deploy and repload if also using serve with browserSync)
      */
     if (include.deploy) {
+        const cache = require("gulp-cached");
+
         const {src, dest} = include.deploy;
 
         const deploy = () => gulp.src(src)
