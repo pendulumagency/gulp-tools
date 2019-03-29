@@ -100,8 +100,6 @@ const createGulpfile = (options) => {
      * Setup TypeScript tasks
      */
     if (include.ts) {
-        const typescript = require("gulp-typescript");
-
         const {src, dest, tsconfig, clean} = include.ts;
         const {ts, tsWatch} = createTypeScript(src, dest, tsconfig);
 
@@ -343,6 +341,8 @@ const createSass = (src, dest, watchSrc) => {
  * @param {*} config 
  */
 const createTypeScript = (src, dest, config = "tsconfig.json") => {
+    const typescript = require("gulp-typescript");
+    
     const ts = () => gulp.src(src)
         .pipe(typescript.createProject("tsconfig.json")())
         .pipe(gulp.dest(dest));
