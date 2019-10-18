@@ -126,6 +126,7 @@ const createGulpfile = (options) => {
 
         if (rollupOptions) {
             const rollupPipe = require("gulp-better-rollup");
+            const uglify = require("gulp-uglify");
 
             let single = rollupOptions.src && rollupOptions.dest;
 
@@ -134,6 +135,7 @@ const createGulpfile = (options) => {
                 
                 const rollup = () => gulp.src(src)
                     .pipe(rollupPipe(...(options || getDefaultRollupOptions())))
+                    .pipe(uglify())
                     .pipe(gulp.dest(dest));
 
                 const rollupWatch = () => gulp.watch(src, rollup);
@@ -152,6 +154,7 @@ const createGulpfile = (options) => {
                     const t = {
                         [k]: () => gulp.src(src)
                             .pipe(rollupPipe(...(options || getDefaultRollupOptions())))
+                            .pipe(uglify())
                             .pipe(gulp.dest(dest)),
                         [k + "Watch"]: () => gulp.watch(src, t[key + "Rollup"])
                     }
